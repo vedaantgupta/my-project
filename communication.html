@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Secure WebRTC Chat & Call</title>
+  <style>
+:root {
+  --bg-dark: #0d0d0d;
+  --blue: #1e90ff;
+  --green: #00cc66;
+  --purple: #8a2be2;
+  --yellow: #ffd700;
+  --white: #ffffff;
+  --border: #333;
+  --text-light: #f5f5f5;
+  --text-muted: #aaaaaa;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  max-width: 1000px;
+  margin: auto;
+  padding: 1.5em;
+  background: linear-gradient(to bottom right, var(--purple), var(--bg-dark));
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+}
+
+video {
+  width: 48%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+  background: black;
+  border: 2px solid var(--blue);
+  box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
+}
+
+textarea, input[type="text"], input[type="file"] {
+  width: 100%;
+  padding: 0.75em;
+  margin: 0.25em 0;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6em 1.1em;
+  font-size: 1rem;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  color: var(--white);
+  box-shadow: 0 4px 10px rgba(0, 255, 100, 0.2);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  transform: scale(1.03);
+}
+
+#chat {
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  margin-top: 1em;
+  padding: 0.75em;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  border-radius: 8px;
+  box-shadow: inset 0 0 8px rgba(0, 255, 100, 0.1);
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1em;
+  margin-bottom: 1em;
+}
+
+.message-row {
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+  margin: 1em 0;
+}
+
+#messageInput {
+  flex-grow: 1;
+  padding: 0.75em;
+  border: 1px solid var(--border);
+  background: var(--bg-dark);
+  color: var(--white);
+  border-radius: 6px;
+}
+
+#fileInput {
+  margin-top: 0.5em;
+  color: var(--yellow);
+}
+
+#status {
+  font-weight: bold;
+  color: var(--green);
+  margin-top: 1em;
+}
+
+#sendBtn {
+  padding: 0.3em;
+  background: transparent;
+  box-shadow: none;
+}
+
+#sendBtn img {
+  height: 42px;
+  width: 42px;
+  object-fit: contain;
+}
+
+    .cta-button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6em 1.1em;
+  font-size: 1rem;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  color: var(--white);
+  box-shadow: 0 4px 10px rgba(0, 255, 100, 0.2);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+    .cta-button:hover {
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  transform: scale(1.03);
+}
+  </style>
+</head>
+<body>
+<div id="app" role="main">
+  <h1>Secure WebRTC Chat & Call (Manual 2-Peer)</h1>
+
+  <div class="controls">
+    <video id="localVideo" autoplay muted playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+
+  <div class="controls">
+  <button onclick="toggleCamera()" id="cameraBtn">🎥 Hide Camera</button>
+  <button onclick="toggleMic()" id="micBtn">🔇 Mute</button>
+</div>
+
+  <textarea id="signalData" placeholder="Paste or copy signal data here..." rows="5"></textarea>
+  <div class="controls">
+    <button onclick="startConnection()">Start Connection</button>
+    <button onclick="answerConnection()">Answer</button>
+    <button onclick="acceptAnswer()">Accept Answer</button>
+    <button onclick="copySignal()">Copy Signal</button>
+  </div>
+
+<div class="message-row">
+  <input type="text" id="messageInput" placeholder="Enter your message" />
+  <button onclick="sendMessage()" id="sendBtn" title="Send">
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtkCyrf86231qCoRzJrwuSZbW_FyI3oiHGQA&s" alt="Send" />
+  </button>
+</div>
+
+  <input type="file" id="fileInput" />
+  <button style="margin-right: 635px;" onclick="sendFile()">Send File</button>
+    <a href="how to use .html" class="cta-button" target="_blank" rel="noopener noreferrer">How to use Guide (Instructions)</a>
+  <div id="chat" aria-live="polite"></div>
+  <p id="status"></p>
+</div>
+
+<script defer>
+let localStream = null, peerConn = null, dataChannel = null;
+
+const localVideo = document.getElementById('localVideo');
+const remoteVideo = document.getElementById('remoteVideo');
+const signalData = document.getElementById('signalData');
+const chatBox = document.getElementById('chat');
+const status = document.getElementById('status');
+
+async function setupMedia() {
+  if (localStream) return;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localVideo.srcObject = localStream;
+  } catch (err) {
+    alert("Media error: " + err.message);
+  }
+}
+
+async function createConnection(isCaller) {
+  peerConn = new RTCPeerConnection();
+
+  if (localStream) {
+    localStream.getTracks().forEach(track => peerConn.addTrack(track, localStream));
+  }
+
+  if (isCaller) {
+    dataChannel = peerConn.createDataChannel("chat");
+    setupDataChannel();
+  } else {
+    peerConn.ondatachannel = event => {
+      dataChannel = event.channel;
+      setupDataChannel();
+    };
+  }
+
+  peerConn.ontrack = e => {
+    if (!remoteVideo.srcObject) {
+      remoteVideo.srcObject = e.streams[0];
+    }
+  };
+
+  peerConn.onicecandidate = event => {
+    if (!event.candidate) {
+      signalData.value = JSON.stringify(peerConn.localDescription);
+    }
+  };
+}
+
+function setupDataChannel() {
+  dataChannel.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'text') addMessage("👤 Friend", sanitize(msg.data));
+      if (msg.type === 'sticker') addMessage("🖼 Sticker", sanitize(msg.data));
+      if (msg.type === 'file') downloadFile(msg.data, msg.filename);
+    } catch (e) {
+      console.error("Message error:", e);
+    }
+  };
+  dataChannel.onopen = () => status.textContent = "✅ Data channel open!";
+}
+
+function addMessage(sender, content) {
+  const p = document.createElement('p');
+  p.textContent = `${sender}: ${content}`;
+  chatBox.appendChild(p);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function startConnection() {
+  await setupMedia();
+  await createConnection(true);
+  const offer = await peerConn.createOffer();
+  await peerConn.setLocalDescription(offer);
+}
+
+async function answerConnection() {
+  await setupMedia();
+  await createConnection(false);
+  const remoteDesc = new RTCSessionDescription(JSON.parse(signalData.value));
+  await peerConn.setRemoteDescription(remoteDesc);
+  const answer = await peerConn.createAnswer();
+  await peerConn.setLocalDescription(answer);
+}
+
+async function acceptAnswer() {
+  try {
+    const remoteDesc = new RTCSessionDescription(JSON.parse(signalData.value));
+    await peerConn.setRemoteDescription(remoteDesc);
+    status.textContent = "✅ Connection established.";
+  } catch (e) {
+    alert("❌ Invalid answer: " + e.message);
+  }
+}
+
+function copySignal() {
+  navigator.clipboard.writeText(signalData.value).then(() => {
+    status.textContent = "📋 Signal copied.";
+  });
+}
+
+function sendMessage() {
+  const msg = document.getElementById('messageInput').value.trim();
+  if (!msg || !dataChannel || dataChannel.readyState !== "open") return;
+  dataChannel.send(JSON.stringify({ type: 'text', data: msg }));
+  addMessage("🧑‍💻 You", sanitize(msg));
+  document.getElementById('messageInput').value = '';
+}
+
+function sendSticker() {
+  const stickers = ["😊", "🎉", "👍", "💯"];
+  const sticker = stickers[Math.floor(Math.random() * stickers.length)];
+  if (!dataChannel || dataChannel.readyState !== "open") return;
+  dataChannel.send(JSON.stringify({ type: 'sticker', data: sticker }));
+  addMessage("🧑‍💻 You (sticker)", sticker);
+}
+
+function sendFile() {
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  if (!file || !dataChannel || dataChannel.readyState !== "open") return;
+
+  if (file.size > 2 * 1024 * 1024) {
+    alert("File too large (max 2MB)");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = reader.result;
+    dataChannel.send(JSON.stringify({ type: 'file', data: base64, filename: file.name }));
+    addMessage("🧑‍💻 You (file)", file.name);
+  };
+  reader.readAsDataURL(file);
+}
+
+function downloadFile(base64, filename) {
+  const a = document.createElement('a');
+  a.href = base64;
+  a.download = filename;
+  a.textContent = `⬇️ ${filename}`;
+  a.style.color = "var(--yellow)";
+  chatBox.appendChild(a);
+  chatBox.appendChild(document.createElement('br'));
+}
+
+function sanitize(str) {
+  return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+document.getElementById("messageInput").addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+let cameraOn = true;
+let micOn = true;
+
+function toggleCamera() {
+  if (!localStream) return;
+  cameraOn = !cameraOn;
+  localStream.getVideoTracks().forEach(track => track.enabled = cameraOn);
+  document.getElementById('cameraBtn').textContent = cameraOn ? "🎥 Hide Camera" : "📷 Show Camera";
+  localVideo.style.background = cameraOn ? "black" : "#111";
+}
+
+function toggleMic() {
+  if (!localStream) return;
+  micOn = !micOn;
+  localStream.getAudioTracks().forEach(track => track.enabled = micOn);
+  document.getElementById('micBtn').textContent = micOn ? "🔇 Mute" : "🎙 Unmute";
+}
+
+</script>
+</body>
+</html>
