@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>How to Use – Secure WebRTC Chat & Call</title>
+  <style>
+:root {
+  --bg-main: #141925;
+  --bg-card: #1e2537;
+  --primary: #6fb9eb;
+  --accent: #b084ff;
+  --success: #00e3aa;
+  --warning: #ffcc00;
+  --danger: #ff6b6b;
+  --text-main: #f1f5f9;
+  --text-muted: #a5acc4;
+  --code-bg: #2b324a;
+  --border: #3d445c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
+  padding: 2rem;
+  max-width: 960px;
+  margin: auto;
+  line-height: 1.8;
+}
+
+h1 {
+  font-size: 2.70rem;
+  text-align: center;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+h2 {
+  font-size: 1.8rem;
+  color: var(--accent);
+  border-left: 6px solid var(--accent);
+  padding-left: 0.75rem;
+  margin-top: 2.5rem;
+}
+
+h3 {
+  font-size: 1.3rem;
+  color: var(--warning);
+  margin-top: 1.5rem;
+}
+
+p {
+  font-size: 1.05rem;
+  color: var(--text-main);
+}
+
+.intro {
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.step {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--primary);
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 16px rgba(77, 184, 255, 0.15);
+}
+
+.step-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+ul {
+  padding-left: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+.highlight {
+  color: var(--success);
+  font-weight: bold;
+}
+
+code {
+  background: var(--code-bg);
+  padding: 0.25rem 0.45rem;
+  border-radius: 5px;
+  color: var(--warning);
+  font-size: 0.95rem;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.note {
+  color: var(--warning);
+  font-style: italic;
+  margin-top: 1rem;
+}
+
+.tip, .security {
+  background: #262f4a;
+  border-left: 6px solid var(--accent);
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  margin-top: 1.5rem;
+  box-shadow: 0 4px 14px rgba(176, 132, 255, 0.2);
+}
+
+.troubleshooting {
+  background: #392e2e;
+  border-left: 6px solid var(--danger);
+  box-shadow: 0 4px 14px rgba(255, 107, 107, 0.1);
+}
+
+.status {
+  background: #1c2d3c;
+  border-left: 6px solid var(--success);
+  box-shadow: 0 4px 14px rgba(0, 227, 170, 0.15);
+}
+
+hr {
+  border: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+  }
+}
+
+  </style>
+</head>
+<body>
+
+  <h1>🔐 How to Use: Secure WebRTC Chat & Call</h1>
+  <p class="intro">Experience fully encrypted, peer-to-peer video, chat, and file sharing — with no servers and no traces.</p>
+
+  <h2>Step 1: Requirements for Both Users</h2>
+  <div class="step">
+    <div class="step-title">Setup Environment</div>
+    <ul>
+      <li>Each user opens the app in a modern browser (preferably <strong>Chrome</strong> or <strong>Firefox</strong>).</li>
+      <li>Ensure both participants have a working <strong>camera and microphone</strong>.</li>
+      <li>Have a secure communication channel (e.g., Signal, encrypted email) ready to share signal codes.</li>
+      <li>This is a <span class="highlight">manual, serverless connection</span> — ultra-secure but requires precise steps.</li>
+    </ul>
+  </div>
+
+  <h2>Step 2: Grant Access to Camera & Microphone</h2>
+  <div class="step">
+    <ul>
+      <li>Click <code>Start Connection</code> or <code>Answer</code>.</li>
+      <li>Allow browser access when prompted. <span class="highlight">Without access, WebRTC cannot function.</span></li>
+      <li>Your own video feed will appear, confirming device access is successful.</li>
+    </ul>
+  </div>
+
+  <h2>Step 3: Signal Exchange</h2>
+
+  <h3>👤 User A (Caller)</h3>
+  <div class="step">
+    <ul>
+      <li>Click <code>Start Connection</code> to generate the initial WebRTC offer (signal).</li>
+      <li>Click <code>Copy Signal</code> and send it securely to User B.</li>
+    </ul>
+  </div>
+
+  <h3>👥 User B (Receiver)</h3>
+  <div class="step">
+    <ul>
+      <li>Paste User A’s signal into the app.</li>
+      <li>Click <code>Answer</code> to generate a response signal.</li>
+      <li>Send the response signal back to User A securely.</li>
+    </ul>
+  </div>
+
+  <h3>✅ Final Step – User A</h3>
+  <div class="step">
+    <ul>
+      <li>Paste User B’s response signal into the app.</li>
+      <li>Click <code>Accept Answer</code> to finalize the connection.</li>
+      <li>You should see <span class="highlight">“Connection established”</span> once connected.</li>
+    </ul>
+  </div>
+
+  <h2>Step 4: Start Secure Chatting</h2>
+  <div class="step">
+    <ul>
+      <li>Type your message into the chat field.</li>
+      <li>Press <strong>Enter</strong> or click <code>Send</code>.</li>
+      <li>Messages are instantly shared via WebRTC’s encrypted data channel.</li>
+    </ul>
+  </div>
+
+  <h2>Step 5: Send Files Safely</h2>
+  <div class="step">
+    <ul>
+      <li>Click <code>Choose File</code> and select a file (2MB max).</li>
+      <li>Click <code>Send File</code>. The recipient will receive a direct download link.</li>
+    </ul>
+    <p class="note">⚠️ Larger files may fail. Consider splitting or compressing files before sending.</p>
+  </div>
+
+  <h2>Step 6: Camera & Microphone Controls</h2>
+  <div class="step">
+    <ul>
+      <li>Toggle video with <code>🎥 Hide Camera</code>.</li>
+      <li>Toggle microphone with <code>🔇 Mute</code>.</li>
+    </ul>
+  </div>
+
+  <h2>Step 7: Understanding Status Messages</h2>
+  <div class="step status">
+    <ul>
+      <li><strong>✅ Connection established:</strong> You’re securely connected.</li>
+      <li><strong>📋 Signal copied:</strong> The signal is copied to clipboard for sharing.</li>
+      <li><strong>🟢 Data channel open:</strong> Messaging and file transfer are ready.</li>
+    </ul>
+  </div>
+
+  <h2>🔐 Privacy & Security Tips</h2>
+  <div class="security">
+    <ul>
+      <li><strong>All traffic is peer-to-peer encrypted (DTLS/SRTP)</strong>.</li>
+      <li><strong>No servers or intermediaries</strong> — not even for chat or files.</li>
+      <li><strong>Messages and files are not logged</strong>. Data vanishes once the session ends.</li>
+      <li>Always exchange signals over <em>end-to-end encrypted channels</em>.</li>
+    </ul>
+  </div>
+
+  <h2>🛠️ Troubleshooting</h2>
+  <div class="step troubleshooting">
+    <ul>
+      <li><strong>Camera or mic not working?</strong> Reload page and check permissions.</li>
+      <li><strong>Signal errors?</strong> Ensure the full JSON is copied — no characters missed.</li>
+      <li><strong>Call not connecting?</strong> Switch networks, or restart your browser.</li>
+    </ul>
+  </div>
+
+  <h2>💡 Best Practices</h2>
+  <div class="tip">
+    <ul>
+      <li>Use a stable wired or Wi-Fi connection for the best call quality.</li>
+      <li>Run a test before important calls.</li>
+      <li>Keep browser tabs minimal to reduce CPU usage.</li>
+    </ul>
+  </div>
+
+</body>
+</html>
