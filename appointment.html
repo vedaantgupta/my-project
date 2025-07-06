@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Secure WebRTC Chat & Call</title>
+  <title>Secure WebRTC Chat & Call + QR</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
 :root {
   --bg-dark: #0d0d0d;
@@ -148,116 +149,101 @@ button:hover {
     .cta-button:hover {
   background: linear-gradient(135deg, var(--purple), var(--blue));
   transform: scale(1.03);
-}
+}    #qrContainer {
+      margin-top: 1em;
+      text-align: center;
+    }
+    #qr {
+      margin-top: 0.5em;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
 <div id="app" role="main">
-  <h1>Secure WebRTC Chat & Call (Manual 2-Peer)</h1>
-
+  <h1>Secure WebRTC Chat & Call (QR Mode)</h1>
   <div class="controls">
     <video id="localVideo" autoplay muted playsinline></video>
     <video id="remoteVideo" autoplay playsinline></video>
   </div>
 
   <div class="controls">
-  <button onclick="toggleCamera()" id="cameraBtn">🎥 Hide Camera</button>
-  <button onclick="toggleMic()" id="micBtn">🔇 Mute</button>
-</div>
+    <button onclick="toggleCamera()" id="cameraBtn">🎥 Hide Camera</button>
+    <button onclick="toggleMic()" id="micBtn">🔇 Mute</button>
+  </div>
 
   <textarea id="signalData" placeholder="Paste or copy signal data here..." rows="5"></textarea>
   <div class="controls">
-    <button onclick="startConnection()">Start Connection</button>
-    <button onclick="answerConnection()">Answer</button>
+    <button onclick="startConnection(true)">Start Connection (Show QR)</button>
+    <button onclick="answerConnection()">Answer (Scan/Load QR)</button>
     <button onclick="acceptAnswer()">Accept Answer</button>
     <button onclick="copySignal()">Copy Signal</button>
   </div>
 
-<div class="message-row">
-  <input type="text" id="messageInput" placeholder="Enter your message" />
-  <button onclick="sendMessage()" id="sendBtn" title="Send">
-    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtkCyrf86231qCoRzJrwuSZbW_FyI3oiHGQA&s" alt="Send" />
-  </button>
-</div>
+  <input type="file" accept="image/*" onchange="scanQRCodeFromFile(this)">
+  <div id="qrContainer">
+    <div id="qr"></div>
+  </div>
 
+  <div class="message-row">
+    <input type="text" id="messageInput" placeholder="Enter your message" />
+    <button onclick="sendMessage()" id="sendBtn" title="Send">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtkCyrf86231qCoRzJrwuSZbW_FyI3oiHGQA&s" alt="Send" />
+    </button>
+  </div>
   <input type="file" id="fileInput" />
-  <button style="margin-right: 635px;" onclick="sendFile()">Send File</button>
-    <a href="how to use .html" class="cta-button" target="_blank" rel="noopener noreferrer">How to use Guide (Instructions)</a>
-  <div id="chat" aria-live="polite"></div>
+  <button onclick="sendFile()">Send File</button>
+
+  <a href="how to use.html" class="cta-button" target="_blank">How to use Guide (Instructions)</a>
+  <div id="chat"></div>
   <p id="status"></p>
 </div>
 
 <script defer>
 let localStream = null, peerConn = null, dataChannel = null;
 
-const localVideo = document.getElementById('localVideo');
-const remoteVideo = document.getElementById('remoteVideo');
-const signalData = document.getElementById('signalData');
-const chatBox = document.getElementById('chat');
-const status = document.getElementById('status');
-
 async function setupMedia() {
   if (localStream) return;
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    localVideo.srcObject = localStream;
-  } catch (err) {
-    alert("Media error: " + err.message);
-  }
+  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  document.getElementById('localVideo').srcObject = localStream;
 }
 
 async function createConnection(isCaller) {
   peerConn = new RTCPeerConnection();
-
-  if (localStream) {
-    localStream.getTracks().forEach(track => peerConn.addTrack(track, localStream));
-  }
+  localStream?.getTracks().forEach(track => peerConn.addTrack(track, localStream));
 
   if (isCaller) {
     dataChannel = peerConn.createDataChannel("chat");
     setupDataChannel();
   } else {
-    peerConn.ondatachannel = event => {
-      dataChannel = event.channel;
-      setupDataChannel();
-    };
+    peerConn.ondatachannel = e => (dataChannel = e.channel, setupDataChannel());
   }
-
-  peerConn.ontrack = e => {
-    if (!remoteVideo.srcObject) {
-      remoteVideo.srcObject = e.streams[0];
-    }
-  };
-
-  peerConn.onicecandidate = event => {
-    if (!event.candidate) {
-      signalData.value = JSON.stringify(peerConn.localDescription);
+  peerConn.ontrack = e => document.getElementById('remoteVideo').srcObject = e.streams[0];
+  peerConn.onicecandidate = e => {
+    if (!e.candidate) {
+      const signal = JSON.stringify(peerConn.localDescription);
+      document.getElementById('signalData').value = signal;
+      generateQR(signal);
     }
   };
 }
 
 function setupDataChannel() {
   dataChannel.onmessage = e => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'text') addMessage("👤 Friend", sanitize(msg.data));
-      if (msg.type === 'sticker') addMessage("🖼 Sticker", sanitize(msg.data));
-      if (msg.type === 'file') downloadFile(msg.data, msg.filename);
-    } catch (e) {
-      console.error("Message error:", e);
-    }
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'text') addMessage("👤 Friend", sanitize(msg.data));
+    if (msg.type === 'file') downloadFile(msg.data, msg.filename);
   };
-  dataChannel.onopen = () => status.textContent = "✅ Data channel open!";
+  dataChannel.onopen = () => document.getElementById('status').textContent = "✅ Data channel open!";
 }
 
 function addMessage(sender, content) {
   const p = document.createElement('p');
   p.textContent = `${sender}: ${content}`;
-  chatBox.appendChild(p);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  document.getElementById('chat').appendChild(p);
 }
 
-async function startConnection() {
+async function startConnection(showQR = false) {
   await setupMedia();
   await createConnection(true);
   const offer = await peerConn.createOffer();
@@ -267,26 +253,21 @@ async function startConnection() {
 async function answerConnection() {
   await setupMedia();
   await createConnection(false);
-  const remoteDesc = new RTCSessionDescription(JSON.parse(signalData.value));
+  const remoteDesc = new RTCSessionDescription(JSON.parse(document.getElementById('signalData').value));
   await peerConn.setRemoteDescription(remoteDesc);
   const answer = await peerConn.createAnswer();
   await peerConn.setLocalDescription(answer);
 }
 
 async function acceptAnswer() {
-  try {
-    const remoteDesc = new RTCSessionDescription(JSON.parse(signalData.value));
-    await peerConn.setRemoteDescription(remoteDesc);
-    status.textContent = "✅ Connection established.";
-  } catch (e) {
-    alert("❌ Invalid answer: " + e.message);
-  }
+  const remoteDesc = new RTCSessionDescription(JSON.parse(document.getElementById('signalData').value));
+  await peerConn.setRemoteDescription(remoteDesc);
+  document.getElementById('status').textContent = "✅ Connection established.";
 }
 
 function copySignal() {
-  navigator.clipboard.writeText(signalData.value).then(() => {
-    status.textContent = "📋 Signal copied.";
-  });
+  navigator.clipboard.writeText(document.getElementById('signalData').value);
+  document.getElementById('status').textContent = "📋 Signal copied.";
 }
 
 function sendMessage() {
@@ -297,28 +278,13 @@ function sendMessage() {
   document.getElementById('messageInput').value = '';
 }
 
-function sendSticker() {
-  const stickers = ["😊", "🎉", "👍", "💯"];
-  const sticker = stickers[Math.floor(Math.random() * stickers.length)];
-  if (!dataChannel || dataChannel.readyState !== "open") return;
-  dataChannel.send(JSON.stringify({ type: 'sticker', data: sticker }));
-  addMessage("🧑‍💻 You (sticker)", sticker);
-}
-
 function sendFile() {
-  const fileInput = document.getElementById('fileInput');
-  const file = fileInput.files[0];
+  const file = document.getElementById('fileInput').files[0];
   if (!file || !dataChannel || dataChannel.readyState !== "open") return;
-
-  if (file.size > 2 * 1024 * 1024) {
-    alert("File too large (max 2MB)");
-    return;
-  }
-
+  if (file.size > 2 * 1024 * 1024) return alert("File too large");
   const reader = new FileReader();
   reader.onload = () => {
-    const base64 = reader.result;
-    dataChannel.send(JSON.stringify({ type: 'file', data: base64, filename: file.name }));
+    dataChannel.send(JSON.stringify({ type: 'file', data: reader.result, filename: file.name }));
     addMessage("🧑‍💻 You (file)", file.name);
   };
   reader.readAsDataURL(file);
@@ -329,40 +295,49 @@ function downloadFile(base64, filename) {
   a.href = base64;
   a.download = filename;
   a.textContent = `⬇️ ${filename}`;
-  a.style.color = "var(--yellow)";
-  chatBox.appendChild(a);
-  chatBox.appendChild(document.createElement('br'));
+  a.style.color = "yellow";
+  document.getElementById('chat').appendChild(a);
+  document.getElementById('chat').appendChild(document.createElement('br'));
 }
 
 function sanitize(str) {
   return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-document.getElementById("messageInput").addEventListener("keydown", function (e) {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
-});
-
-let cameraOn = true;
-let micOn = true;
-
-function toggleCamera() {
-  if (!localStream) return;
-  cameraOn = !cameraOn;
-  localStream.getVideoTracks().forEach(track => track.enabled = cameraOn);
-  document.getElementById('cameraBtn').textContent = cameraOn ? "🎥 Hide Camera" : "📷 Show Camera";
-  localVideo.style.background = cameraOn ? "black" : "#111";
+function generateQR(data) {
+  document.getElementById('qr').innerHTML = "";
+  new QRCode(document.getElementById("qr"), {
+    text: data,
+    width: 256,
+    height: 256
+  });
 }
 
-function toggleMic() {
-  if (!localStream) return;
-  micOn = !micOn;
-  localStream.getAudioTracks().forEach(track => track.enabled = micOn);
-  document.getElementById('micBtn').textContent = micOn ? "🔇 Mute" : "🎙 Unmute";
+function scanQRCodeFromFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.src = reader.result;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      const code = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+      if (code) {
+        document.getElementById("signalData").value = code.data;
+        document.getElementById("status").textContent = "✅ QR code scanned.";
+      } else {
+        alert("❌ QR not found.");
+      }
+    };
+  };
+  reader.readAsDataURL(file);
 }
-
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
 </body>
 </html>
