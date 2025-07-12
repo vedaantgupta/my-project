@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1024, initial-scale=0.5">
+<meta name="viewport" content="width=1024">
+  <title>PixelVault Pro</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+    }
+    header {
+      background: #1e1e1e;
+      text-align: center;
+      padding: 1rem;
+      font-size: 1.8rem;
+    }
+    main {
+      padding: 1rem;
+      max-width: 1200px;
+      margin: auto;
+    }
+    canvas {
+      display: block;
+      margin: 1rem auto;
+      border: 1px solid #444;
+      background-color: #000;
+    }
+    .controls, .filters, .grid-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9rem;
+    }
+    input[type="range"], input[type="color"], input[type="number"] {
+      width: 150px;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background: #3f51b5;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #5c6bc0;
+    }
+
+        input[type="range"], input[type="color"] {
+      width: 100%;
+    }
+    .crop-rect {
+      position: absolute;
+      border: 2px dashed #fff;
+      pointer-events: none;
+    }
+
+        input[type="range"], input[type="color"] {
+      width: 100%;
+    }
+    .crop-rect {
+      position: absolute;
+      border: 2px dashed #fff;
+      pointer-events: none;
+    }
+    /* Remove or avoid this */
+@media (max-width: 600px) {
+  /* don't shrink or hide elements */
+}
+body {
+  min-width: 1024px;
+}
+
+  </style>
+</head>
+<body>
+  <header>
+    🎨 PixelVault Pro – Complete Image Editor
+  </header>
+  <main>
+    <input type="file" id="upload" accept="image/*">
+    <div style="margin-top: 1rem;">
+  <button onclick="openCamera()">📸 Open Camera</button>
+  <button onclick="capturePhoto()">📷 Capture Photo</button>
+  <div id="gallery">
+  <h2>📁 Saved Gallery</h2>
+  <div id="gallery-images"></div>
+  <button onclick="clearGallery()">Clear Gallery</button> <!-- <-- THIS BUTTON -->
+</div>
+
+  <video id="camera" width="320" height="240" autoplay style="display:none;"></video>
+</div>
+
+<h3>📁 Saved Images Gallery</h3>
+<div id="gallery" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <div class="controls">
+      <button onclick="rotate()">Rotate</button>
+      <button onclick="mirror()">Mirror</button>
+      <button onclick="toggleGrid()">Toggle Grid</button>
+      <button onclick="startCrop()">Start Crop</button>
+      <button onclick="confirmCrop()">Confirm Crop</button>
+      <button onclick="addText()">Add Text</button>
+      <button onclick="reset()">Reset</button>
+      <button onclick="download()">Download</button>
+    </div>
+
+    <div class="filters">
+      <label>Brightness <input type="range" id="brightness" min="-100" max="100" value="0"></label>
+      <label>Contrast <input type="range" id="contrast" min="-100" max="100" value="0"></label>
+      <label>Saturation <input type="range" id="saturation" min="-100" max="100" value="0"></label>
+      <label>Exposure <input type="range" id="exposure" min="-100" max="100" value="0"></label>
+      <label>Highlights <input type="range" id="highlights" min="-100" max="100" value="0"></label>
+      <label>Shadows <input type="range" id="shadows" min="-100" max="100" value="0"></label>
+      <label>Tint <input type="color" id="tint" value="#ffffff"></label>
+      <label>Temperature <input type="range" id="temperature" min="-100" max="100" value="0"></label>
+      <button onclick="filter('grayscale')">Grayscale</button>
+      <button onclick="filter('sepia')">Sepia</button>
+      <button onclick="filter('invert')">Invert</button>
+      <button onclick="filter('blur')">Blur</button>
+    </div>
+
+    <div class="grid-controls">
+<label>Grid Color <input type="color" id="gridColor" value="#ffffff"></label>
+    <label>Grid Rows <input type="number" id="gridRows" min="2" max="100" value="10"></label>
+    <label>Grid Cols <input type="number" id="gridCols" min="2" max="100" value="10"></label>
+    <label>Line Width <input type="range" id="lineWidth" min="1" max="10" value="1"></label>
+      <label><input type="checkbox" id="showGrid"> Show Grid</label>
+      <label><input type="checkbox" id="diagonals"> Diagonals</label>
+      <label><input type="checkbox" id="numbers"> Numbers</label>
+    </div>
+  </main>
+  <script>
+    const upload = document.getElementById('upload');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let img = new Image();
+    let imgData = null;
+    let originalData = null;
+
+    upload.addEventListener('change', e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = evt => {
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function reset() {
+      ctx.putImageData(originalData, 0, 0);
+    }
+
+    function download() {
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL();
+      a.download = 'edited.png';
+      a.click();
+    }
+
+    function rotate() {
+      const temp = document.createElement('canvas');
+      temp.width = canvas.height;
+      temp.height = canvas.width;
+      const tctx = temp.getContext('2d');
+      tctx.translate(temp.width / 2, temp.height / 2);
+      tctx.rotate(Math.PI / 2);
+      tctx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+      canvas.width = temp.width;
+      canvas.height = temp.height;
+      ctx.drawImage(temp, 0, 0);
+    }
+
+    function mirror() {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(canvas, 0, 0);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    function crop() {
+      const sx = parseInt(prompt('Start X:', 0));
+      const sy = parseInt(prompt('Start Y:', 0));
+      const sw = parseInt(prompt('Width:', 100));
+      const sh = parseInt(prompt('Height:', 100));
+      const temp = ctx.getImageData(sx, sy, sw, sh);
+      canvas.width = sw;
+      canvas.height = sh;
+      ctx.putImageData(temp, 0, 0);
+    }
+
+    function addText() {
+      const text = prompt('Text to add:');
+      const x = parseInt(prompt('X position:', 50));
+      const y = parseInt(prompt('Y position:', 50));
+      ctx.fillStyle = 'white';
+      ctx.font = '30px Arial';
+      ctx.fillText(text, x, y);
+    }
+
+    function filter(type) {
+      ctx.filter = type === 'blur' ? 'blur(2px)' : `${type}(1)`;
+      ctx.drawImage(canvas, 0, 0);
+      ctx.filter = 'none';
+    }
+
+    document.querySelectorAll('.filters input').forEach(input => {
+      input.addEventListener('input', applyFilters);
+    });
+
+    function applyFilters() {
+      if (!originalData) return;
+      const data = new Uint8ClampedArray(originalData.data);
+      const brightness = parseInt(document.getElementById('brightness').value);
+      const contrast = parseInt(document.getElementById('contrast').value);
+      const exposure = parseInt(document.getElementById('exposure').value);
+      const saturation = parseInt(document.getElementById('saturation').value);
+      const highlights = parseInt(document.getElementById('highlights').value);
+      const shadows = parseInt(document.getElementById('shadows').value);
+      const tempShift = parseInt(document.getElementById('temperature').value);
+      const tint = document.getElementById('tint').value;
+
+      for (let i = 0; i < data.length; i += 4) {
+        let avg = (data[i] + data[i+1] + data[i+2]) / 3;
+        data[i] += brightness + exposure + tempShift;
+        data[i+1] += brightness + exposure;
+        data[i+2] += brightness + exposure - tempShift;
+        data[i] = (data[i] - 128) * (contrast / 100 + 1) + 128;
+        data[i+1] = (data[i+1] - 128) * (contrast / 100 + 1) + 128;
+        data[i+2] = (data[i+2] - 128) * (contrast / 100 + 1) + 128;
+        data[i] += (avg - data[i]) * (shadows / 100);
+        data[i+1] += (avg - data[i+1]) * (shadows / 100);
+        data[i+2] += (avg - data[i+2]) * (shadows / 100);
+        data[i] = Math.min(255, Math.max(0, data[i]));
+        data[i+1] = Math.min(255, Math.max(0, data[i+1]));
+        data[i+2] = Math.min(255, Math.max(0, data[i+2]));
+      }
+
+      ctx.putImageData(new ImageData(data, canvas.width, canvas.height), 0, 0);
+      if (document.getElementById('showGrid').checked) drawGrid();
+    }
+
+    document.getElementById('showGrid').addEventListener('change', drawGrid);
+    document.getElementById('gridSize').addEventListener('input', drawGrid);
+    document.getElementById('gridColor').addEventListener('input', drawGrid);
+    document.getElementById('lineWidth').addEventListener('input', drawGrid);
+    document.getElementById('diagonals').addEventListener('change', drawGrid);
+    document.getElementById('numbers').addEventListener('change', drawGrid);
+
+    function drawGrid() {
+      if (!document.getElementById('showGrid').checked) return applyFilters();
+      const gridSize = parseInt(document.getElementById('gridSize').value);
+      const gridColor = document.getElementById('gridColor').value;
+      const lineWidth = parseInt(document.getElementById('lineWidth').value);
+      const diagonals = document.getElementById('diagonals').checked;
+      const numbers = document.getElementById('numbers').checked;
+
+      applyFilters();
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = lineWidth;
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = gridColor;
+
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+        if (numbers) ctx.fillText(x, x + 2, 12);
+      }
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+        if (numbers) ctx.fillText(y, 2, y + 12);
+      }
+      if (diagonals) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(canvas.width, canvas.height);
+        ctx.moveTo(canvas.width, 0);
+        ctx.lineTo(0, canvas.height);
+        ctx.stroke();
+      }
+    }
+
+    function startCrop() {
+  cropMode = true;
+  cropBox.style.display = 'block';
+}
+
+function confirmCrop() {
+  const x = parseInt(cropBox.style.left);
+  const y = parseInt(cropBox.style.top);
+  const width = parseInt(cropBox.style.width);
+  const height = parseInt(cropBox.style.height);
+  const imageData = ctx.getImageData(x, y, width, height);
+  canvas.width = width;
+  canvas.height = height;
+  ctx.putImageData(imageData, 0, 0);
+  cropBox.style.display = 'none';
+  cropMode = false;
+  image.src = canvas.toDataURL();
+  texts = [];
+}
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  redrawCanvas();
+}
+
+function drawGrid() {
+  const rows = +document.getElementById('gridRows').value;
+  const cols = +document.getElementById('gridCols').value;
+  const color = document.getElementById('gridColor').value;
+  const width = +document.getElementById('lineWidth').value;
+  const rowHeight = canvas.height / rows;
+  const colWidth = canvas.width / cols;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.font = '12px Arial';
+  ctx.fillStyle = color;
+  for (let i = 1; i < rows; i++) {
+    const y = i * rowHeight;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+    ctx.fillText(i, 2, y - 2);
+  }
+  for (let i = 1; i < cols; i++) {
+    const x = i * colWidth;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+    ctx.fillText(i, x + 2, 12);
+  }
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = c * colWidth;
+      const y = r * rowHeight;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + colWidth, y + rowHeight);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + colWidth, y);
+      ctx.lineTo(x, y + rowHeight);
+      ctx.stroke();
+    }
+  }
+}
+
+function startCrop() {
+  cropMode = true;
+  cropBox.style.display = 'block';
+}
+
+function confirmCrop() {
+  const x = parseInt(cropBox.style.left);
+  const y = parseInt(cropBox.style.top);
+  const width = parseInt(cropBox.style.width);
+  const height = parseInt(cropBox.style.height);
+  const imageData = ctx.getImageData(x, y, width, height);
+  canvas.width = width;
+  canvas.height = height;
+  ctx.putImageData(imageData, 0, 0);
+  cropBox.style.display = 'none';
+  cropMode = false;
+  image.src = canvas.toDataURL();
+  texts = [];
+}
+
+function addText() {
+  const text = prompt("Enter your text:");
+  if (!text) return;
+  texts.push({ text, x: 50, y: 50 });
+  redrawCanvas();
+}
+
+function redrawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.putImageData(originalData, 0, 0);
+  texts.forEach(t => {
+    ctx.fillStyle = 'white';
+    ctx.font = '30px Arial';
+    ctx.fillText(t.text, t.x, t.y);
+  });
+  if (showGrid) drawGrid();
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  const mouseX = e.offsetX;
+  const mouseY = e.offsetY;
+  for (let i = texts.length - 1; i >= 0; i--) {
+    const t = texts[i];
+    const width = ctx.measureText(t.text).width;
+    if (mouseX >= t.x && mouseX <= t.x + width && mouseY >= t.y - 20 && mouseY <= t.y) {
+      activeTextIndex = i;
+      break;
+    }
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (activeTextIndex !== null) {
+    texts[activeTextIndex].x = e.offsetX;
+    texts[activeTextIndex].y = e.offsetY;
+    redrawCanvas();
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  activeTextIndex = null;
+});
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  redrawCanvas();
+}
+
+function drawGrid() {
+  const rows = +document.getElementById('gridRows').value;
+  const cols = +document.getElementById('gridCols').value;
+  const color = document.getElementById('gridColor').value;
+  const width = +document.getElementById('lineWidth').value;
+  const rowHeight = canvas.height / rows;
+  const colWidth = canvas.width / cols;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.font = '12px Arial';
+  ctx.fillStyle = color;
+  for (let i = 1; i < rows; i++) {
+    const y = i * rowHeight;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+    ctx.fillText(i, 2, y - 2);
+  }
+  for (let i = 1; i < cols; i++) {
+    const x = i * colWidth;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+    ctx.fillText(i, x + 2, 12);
+  }
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = c * colWidth;
+      const y = r * rowHeight;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + colWidth, y + rowHeight);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + colWidth, y);
+      ctx.lineTo(x, y + rowHeight);
+      ctx.stroke();
+    }
+  }
+}
+
+let showGrid = false;
+let cropMode = false;
+let cropBox = document.createElement('div');
+cropBox.className = 'crop-rect';
+document.body.appendChild(cropBox);
+let cameraStream = null;
+let texts = [];
+let activeTextIndex = null;
+
+// Open webcam
+function openCamera() {
+  const video = document.getElementById('camera');
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+      video.srcObject = stream;
+      video.style.display = 'block';
+      cameraStream = stream;
+    })
+    .catch(err => alert('Camera access denied: ' + err));
+}
+
+// Capture photo from webcam
+function capturePhoto() {
+  const video = document.getElementById('camera');
+  if (!cameraStream) return alert('Camera not started.');
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+  imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+// Override download to also save in localStorage
+function download() {
+  const a = document.createElement('a');
+  const dataURL = canvas.toDataURL();
+  a.href = dataURL;
+  a.download = 'edited.png';
+  a.click();
+
+  // Save to localStorage gallery
+  const saved = JSON.parse(localStorage.getItem('gallery') || '[]');
+  saved.push(dataURL);
+  localStorage.setItem('gallery', JSON.stringify(saved));
+  loadGallery();
+}
+
+// Load saved images into the gallery
+function loadGallery() {
+  const saved = JSON.parse(localStorage.getItem('gallery') || '[]');
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
+  saved.forEach((dataURL, index) => {
+    const img = document.createElement('img');
+    img.src = dataURL;
+    img.width = 100;
+    img.style.cursor = 'pointer';
+    img.title = 'Click to load image';
+    img.onclick = () => {
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        canvas.width = tempImg.width;
+        canvas.height = tempImg.height;
+        ctx.drawImage(tempImg, 0, 0);
+        originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      };
+      tempImg.src = dataURL;
+    };
+    gallery.appendChild(img);
+  });
+}
+
+// Initial load of gallery
+window.onload = loadGallery;
+
+  </script>
+</body>
+</html>
