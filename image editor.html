@@ -283,6 +283,7 @@ button:hover {
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script>
 // Final Full JavaScript for PixelVault Pro – Functional, Professional
 
@@ -563,6 +564,29 @@ function filter(type) {
     default:
       img.style.filter = 'none';
   }
+}
+
+    async function aiEnhance() {
+    if (!image.src) return alert("Upload an image first!");
+    
+    // Load a TensorFlow.js model (example URL, you'd host your model)
+    const model = await tf.loadGraphModel('model/model.json');
+    
+    // Convert canvas to tensor
+    const tensor = tf.browser.fromPixels(canvas);
+    const input = tensor.expandDims(0).toFloat().div(255); // normalize
+
+    // Run model
+    const output = model.execute(input);
+    
+    // Convert back to image
+    const enhanced = await tf.browser.toPixels(output.squeeze());
+    
+    // Draw enhanced image
+    const imgData = new ImageData(enhanced, canvas.width, canvas.height);
+    ctx.putImageData(imgData, 0, 0);
+    
+    originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
 </script>
