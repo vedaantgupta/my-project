@@ -1658,29 +1658,37 @@ $(document).ready(function(){
   // Init
   renderProducts();
     function sendToWhatsApp() {
-      // Get values from the form
-      const name = document.getElementById("name").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const arttype = document.getElementById("arttype").value;
-      const size = document.getElementById("size").value;
-      const notes = document.getElementById("notes").value.trim();
+  // Get values from the form
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const arttype = document.getElementById("arttype").value;
+  const size = document.getElementById("size").value;
+  const notes = document.getElementById("notes").value.trim();
 
-      // Check if all required fields are filled
-      if (!name || !phone || !arttype || !size || !notes) {
-        alert("Please fill all fields before submitting.");
-        return false;
-      }
+  // Validation
+  if (!name || !phone || !arttype || !size || !notes) {
+    alert("Please fill all fields before submitting.");
+    return;
+  }
 
-      // Construct the message
-      const text = `Hello Vedaant, I would like to request a commission artwork.🧑 Name: ${name}%0A📱 Mobile: ${phone}🎨 Artwork Type: ${arttype}📐 Size: ${size}📝 Notes: ${notes}`;
-      const whatsappNumber = "918085692449"; // Ensure this is the correct number
+  // Message (NORMAL text, not manually encoded)
+  const message =
+    `Hello Vedaant, I would like to request a commission artwork.\n\n` +
+    `👤 Name: ${name}\n` +
+    `📱 Mobile: ${phone}\n` +
+    `🎨 Artwork Type: ${arttype}\n` +
+    `📐 Size: ${size}\n` +
+    `📝 Notes: ${notes}`;
 
-      // Create WhatsApp URL
-      const whatsappURL = `https://whatsapp./${whatsappNumber}?text=${encodeURIComponent(text)}`;
+  const whatsappNumber = "918085692449"; // country code included
 
-      // Create an anchor link with href for better mobile support
-      window.location.href = whatsappURL;
-    }
+  // ✅ CORRECT WhatsApp URL
+  const whatsappURL =
+    `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+  // Redirect to WhatsApp
+  window.open(whatsappURL, "_blank");
+}
   </script>
 </body>
 </html>
