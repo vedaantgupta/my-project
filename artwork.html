@@ -738,31 +738,31 @@ body {
   min-width: 1024px;
 }
 
-      /* ================= ARTIST CARD ================= */
+/* ================= ARTIST CARD ================= */
 
 .artist-card {
   width: 100%;
-  max-width: 620px;
+  max-width: 360px;
   margin: auto;
-  padding: 40px 30px;
+  padding: 32px 24px;
   background: #3f535b;
-  border-radius: 26px;
+  border-radius: 24px;
   text-align: center;
-  box-shadow: 0 35px 80px rgba(0,0,0,0.6);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.6);
 }
 
 /* ================= CLICKABLE IMAGE ================= */
 
 .modern-image-card {
   position: relative;
-  width: 500px;
-  height: 500px;
-  margin: 0 auto 30px;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 22px;
   display: block;
   text-decoration: none;
 }
 
-/* Animated Border */
+/* Animated Border (ALL requested colors) */
 .animated-border {
   position: absolute;
   inset: 0;
@@ -776,41 +776,41 @@ body {
     white,
     brown,
     grey,
-    #0b1cff,  /* dark blue */
+    #0b1cff,   /* dark blue */
     violet
   );
   background-size: 700% 700%;
-  animation: slowBorderFlow 28s linear infinite;
+  animation: slowBorderFlow 26s linear infinite;
   z-index: 1;
 }
 
-/* Glow layer BETWEEN border & image */
+/* Glow BETWEEN border & image */
 .inner-glow {
   position: absolute;
-  inset: 16px;
+  inset: 8px;
   background: radial-gradient(
     circle,
     rgba(0, 255, 200, 0.4),
     rgba(0, 0, 0, 0)
   );
-  filter: blur(18px);
+  filter: blur(14px);
   z-index: 2;
 }
 
 /* Image */
 .modern-image-card img {
   position: absolute;
-  inset: 28px;
-  width: calc(100% - 56px);
-  height: calc(100% - 56px);
+  inset: 14px;
+  width: calc(100% - 28px);
+  height: calc(100% - 28px);
   object-fit: contain;
   background: #3f535b;
   z-index: 3;
 }
 
-/* Hover (very subtle) */
+/* Subtle modern hover */
 .modern-image-card:hover {
-  transform: scale(1.03);
+  transform: scale(1.05);
 }
 
 /* Slow premium animation */
@@ -824,23 +824,23 @@ body {
 
 .artist-name-card {
   font-family: 'Algerian', serif;
-  font-size: 32px;
+  font-size: 24px;
   color: #ffffff;
   letter-spacing: 2px;
-  margin: 12px 0 8px;
+  margin: 8px 0 6px;
 }
 
 .artist-role-card {
   color: #00ffd5;
-  font-size: 17px;
-  margin-bottom: 12px;
+  font-size: 14px;
+  margin-bottom: 10px;
 }
 
 .artist-tagline-card {
   color: #e8f9ff;
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.5;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 /* ================= READ MORE BUTTON ================= */
@@ -848,14 +848,14 @@ body {
 .read-more-btn {
   margin-top: 14px;
   display: inline-block;
-  padding: 12px 34px;
+  padding: 10px 28px;
   background: linear-gradient(135deg, #00ffd5, #00aaff);
   color: #003a44;
   border-radius: 30px;
   text-decoration: none;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: bold;
-  box-shadow: 0 12px 30px rgba(0,255,213,0.55);
+  box-shadow: 0 12px 28px rgba(0,255,213,0.55);
 }
 
 </style>
@@ -910,11 +910,11 @@ body {
 <div class="artist-card">
 
   <!-- Clickable Animated Image -->
-  <a href="images/logo.png" target="_blank" class="modern-image-card">
+  <a href="https://media.licdn.com/dms/image/v2/D4D03AQHCYVqCKxIqsA/profile-displayphoto-scale_200_200/B4DZumgOz0GgAY-/0/1768025030002?e=1769644800&v=beta&t=oesqMKW0ZiC2PtGVqPe27UDER48DwjOwZpzNZ8Fwj7E" target="_blank" class="modern-image-card">
     <span class="animated-border"></span>
     <span class="inner-glow"></span>
 
-    <img src="images/logo.png" alt="Vedaant Gupta Logo">
+    <img src="https://media.licdn.com/dms/image/v2/D4D03AQHCYVqCKxIqsA/profile-displayphoto-scale_200_200/B4DZumgOz0GgAY-/0/1768025030002?e=1769644800&v=beta&t=oesqMKW0ZiC2PtGVqPe27UDER48DwjOwZpzNZ8Fwj7E" alt="Vedaant Gupta Logo">
   </a>
 
   <h2 class="artist-name-card">VEDAANT GUPTA</h2>
@@ -926,16 +926,6 @@ body {
   <!-- Read More Button -->
   <a href="#about" class="cta-button btn read-more-btn">Read More</a>
 
-</div>
-
-    <!-- Attached black caption bar -->
-    <div style="position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.85); padding: 8px;">
-      <p style="margin: 0; font-weight: bold; color: #fff; font-size: 16px;">Mr. Vedaant Gupta</p>
-    </div>
-  </div>
-
-  <!-- Read More Button -->
-  <a href="#about" class="cta-button btn" style="margin-top: 14px; display: inline-block;">Read More</a>
 </div>
 
 
