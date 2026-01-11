@@ -738,6 +738,126 @@ body {
   min-width: 1024px;
 }
 
+      /* ================= ARTIST CARD ================= */
+
+.artist-card {
+  width: 100%;
+  max-width: 620px;
+  margin: auto;
+  padding: 40px 30px;
+  background: #3f535b;
+  border-radius: 26px;
+  text-align: center;
+  box-shadow: 0 35px 80px rgba(0,0,0,0.6);
+}
+
+/* ================= CLICKABLE IMAGE ================= */
+
+.modern-image-card {
+  position: relative;
+  width: 500px;
+  height: 500px;
+  margin: 0 auto 30px;
+  display: block;
+  text-decoration: none;
+}
+
+/* Animated Border */
+.animated-border {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    purple,
+    blue,
+    green,
+    lightblue,
+    black,
+    white,
+    brown,
+    grey,
+    #0b1cff,  /* dark blue */
+    violet
+  );
+  background-size: 700% 700%;
+  animation: slowBorderFlow 28s linear infinite;
+  z-index: 1;
+}
+
+/* Glow layer BETWEEN border & image */
+.inner-glow {
+  position: absolute;
+  inset: 16px;
+  background: radial-gradient(
+    circle,
+    rgba(0, 255, 200, 0.4),
+    rgba(0, 0, 0, 0)
+  );
+  filter: blur(18px);
+  z-index: 2;
+}
+
+/* Image */
+.modern-image-card img {
+  position: absolute;
+  inset: 28px;
+  width: calc(100% - 56px);
+  height: calc(100% - 56px);
+  object-fit: contain;
+  background: #3f535b;
+  z-index: 3;
+}
+
+/* Hover (very subtle) */
+.modern-image-card:hover {
+  transform: scale(1.03);
+}
+
+/* Slow premium animation */
+@keyframes slowBorderFlow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ================= TEXT ================= */
+
+.artist-name-card {
+  font-family: 'Algerian', serif;
+  font-size: 32px;
+  color: #ffffff;
+  letter-spacing: 2px;
+  margin: 12px 0 8px;
+}
+
+.artist-role-card {
+  color: #00ffd5;
+  font-size: 17px;
+  margin-bottom: 12px;
+}
+
+.artist-tagline-card {
+  color: #e8f9ff;
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* ================= READ MORE BUTTON ================= */
+
+.read-more-btn {
+  margin-top: 14px;
+  display: inline-block;
+  padding: 12px 34px;
+  background: linear-gradient(135deg, #00ffd5, #00aaff);
+  color: #003a44;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: bold;
+  box-shadow: 0 12px 30px rgba(0,255,213,0.55);
+}
+
 </style>
 </head>
 <body>
@@ -787,7 +907,26 @@ body {
 <div class="image-side" style="flex: 1 1 300px; text-align: center;">
   <div style="display: inline-block; position: relative; max-width: 300px; width: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
     
-    <img src="images/Vedaant gupta.jpeg" alt="Vedaant Gupta" style="width: 100%; display: block;">
+<div class="artist-card">
+
+  <!-- Clickable Animated Image -->
+  <a href="images/logo.png" target="_blank" class="modern-image-card">
+    <span class="animated-border"></span>
+    <span class="inner-glow"></span>
+
+    <img src="images/logo.png" alt="Vedaant Gupta Logo">
+  </a>
+
+  <h2 class="artist-name-card">VEDAANT GUPTA</h2>
+  <p class="artist-role-card">Custom & Commission Artist</p>
+  <p class="artist-tagline-card">
+    Transforming ideas into timeless handmade art
+  </p>
+
+  <!-- Read More Button -->
+  <a href="#about" class="cta-button btn read-more-btn">Read More</a>
+
+</div>
 
     <!-- Attached black caption bar -->
     <div style="position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.85); padding: 8px;">
